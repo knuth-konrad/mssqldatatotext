@@ -1,3 +1,9 @@
+2020-03-04, v1.0.0.30816
+
+** FIX **
+- Escape/replace one double quotes with two double quotes in textual data as per CSV specification.
+
+
 2020-03-04
 
 - Initial release
