@@ -12,7 +12,7 @@
 						<![CDATA[Server=sqlserver.domain.tld;Database=MyDatabase;User Id=sa;Password=password;]]>
 					</CfgEntry>
 					<CfgEntry Key="TableQuery" IsBinary="false" VarType="8">
-					<!-- Define which tables to export, this quer (the default) selects all tables = exports all data of those tables -->
+					<!-- Define which tables to export, this query (the default) selects all tables = exports all data of those tables -->
 						<![CDATA[SELECT schemas.name as schemaName, tables.name as tableName from sys.tables inner join sys.schemas ON tables.schema_id = schemas.schema_id]]>
 					</CfgEntry>
 				</CfgEntrys>
@@ -47,8 +47,8 @@
 			-->
 				<CfgEntrys>
 				<!-- 
-				List any column which shouldn't be export in the format <schema>.<tablename>.<column>, e.g. dbo.Customerdata.ID
-				If a tbale should be skipped altogether, use '*' as the column name, e.g. dbo.Customerdata.*
+				List any column which shouldn't be exported in the format <schema>.<tablename>.<column>, e.g. dbo.Customerdata.ID
+				If a table should be skipped altogether, use '*' as the column name, e.g. dbo.Customerdata.*
 				-->
 					<CfgEntry Key=">ColumnName" IsBinary="false" VarType="8">
 						<![CDATA[dbo.Rn_Interaction_Attachment.*]]>
