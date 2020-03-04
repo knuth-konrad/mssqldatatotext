@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Configurations>
+	<Configuration Default="true" Key="Default" LastRead="1899-12-30T00:00:00.0000" LastWrite="2019-02-14T10:18:38.0000">
+		<CfgSections>
+			<CfgSection Key="Database">
+			<!-- 
+			Database connection, define the ConnectionString properties for the .NET SqlClient.
+			For connection string examples, see https://www.connectionstrings.com/sql-server/
+			-->
+				<CfgEntrys>
+					<CfgEntry Key="ConnectionString" IsBinary="false" VarType="8">
+						<![CDATA[Server=sqlserver.domain.tld;Database=MyDatabase;User Id=sa;Password=password;]]>
+					</CfgEntry>
+					<CfgEntry Key="TableQuery" IsBinary="false" VarType="8">
+					<!-- Define which tables to export, this quer (the default) selects all tables = exports all data of those tables -->
+						<![CDATA[SELECT schemas.name as schemaName, tables.name as tableName from sys.tables inner join sys.schemas ON tables.schema_id = schemas.schema_id]]>
+					</CfgEntry>
+				</CfgEntrys>
+			</CfgSection>
+			<CfgSection Key="Export">
+			<!-- Configure the data export. -->
+				<CfgEntrys>
+					<CfgEntry Key="SkipEmptyTables" IsBinary="false" VarType="3">
+					<!--  Skip the creation of export files for empty (=no data) tables alltogether?, 1 = True (Skip), 0 = False (Don't skip) -->
+						<![CDATA[0]]>
+					</CfgEntry>
+					<CfgEntry Key="DestinationPath" IsBinary="false" VarType="8">
+					<!--  Set a folder as a destination -->
+						<![CDATA[C:\DATA\Exports\]]>
+					</CfgEntry>
+					<CfgEntry Key="ColumnDelimiter" IsBinary="false" VarType="8">
+					<!-- Character used to delimit columns in result text file  -->
+						<![CDATA[;]]>
+					</CfgEntry>
+					<CfgEntry Key="ColumnNameAsFirstLine" IsBinary="false" VarType="3">
+					<!--
+					Output the column names as the first line?, 1 = Yes, 0 = No
+					Defaults to 1 = Yes, if missing
+					-->
+						<![CDATA[1]]>
+					</CfgEntry>
+				</CfgEntrys>
+			</CfgSection>
+			<CfgSection Key="SkipColumns">
+			<!-- 
+			Do not export the data of the following columns.
+			-->
+				<CfgEntrys>
+				<!-- 
+				List any column which shouldn't be export in the format <schema>.<tablename>.<column>, e.g. dbo.Customerdata.ID
+				If a tbale should be skipped altogether, use '*' as the column name, e.g. dbo.Customerdata.*
+				-->
+					<CfgEntry Key=">ColumnName" IsBinary="false" VarType="8">
+						<![CDATA[dbo.Rn_Interaction_Attachment.*]]>
+					</CfgEntry>
+					<CfgEntry Key="ColumnName" IsBinary="false" VarType="8">
+						<![CDATA[dbo.Rn_Interaction_Email.*]]>
+					</CfgEntry>
+					<CfgEntry Key="ColumnName" IsBinary="false" VarType="8">
+						<![CDATA[dbo.Mail_Merges.*]]>
+					</CfgEntry>
+				</CfgEntrys>
+			</CfgSection>
+		</CfgSections>
+	</Configuration>
+</Configurations>
+

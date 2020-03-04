@@ -11,9 +11,10 @@
     <AssemblyName>MsSqlDataToText</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>Console</MyType>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -48,6 +49,9 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CommandLine, Version=2.7.82.0, Culture=neutral, PublicKeyToken=5a870481e358d379, processorArchitecture=MSIL">
+      <HintPath>..\packages\CommandLineParser.2.7.82\lib\net461\CommandLine.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
@@ -58,7 +62,6 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
-    <Import Include="Microsoft.VisualBasic" />
     <Import Include="System" />
     <Import Include="System.Collections" />
     <Import Include="System.Collections.Generic" />
@@ -69,6 +72,8 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="cBAUtilCC.vb" />
+    <Compile Include="CLS\CmdOptions.vb" />
     <Compile Include="modMain.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
@@ -85,6 +90,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="STADateTime.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">
@@ -105,6 +111,21 @@
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
     <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\INCLUDE\libXmlConfig\libXmlConfig.vbproj">
+      <Project>{6ea8e9e4-a8a3-4c62-a392-3e285399522a}</Project>
+      <Name>libXmlConfig</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\INCLUDE\libXmlUtil\libXmlUtil.vbproj">
+      <Project>{7968e9f6-5c52-435b-a975-fae301948e1a}</Project>
+      <Name>libXmlUtil</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\zLIBRARY\BasicAware\libBAUtil\libBAUtil.vbproj">
+      <Project>{4582df40-754a-422d-8fd6-e1f9f594a6bd}</Project>
+      <Name>libBAUtil</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

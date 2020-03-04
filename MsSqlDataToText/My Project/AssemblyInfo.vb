@@ -9,8 +9,8 @@ Imports System.Runtime.InteropServices
 ' Review the values of the assembly attributes
 
 <Assembly: AssemblyTitle("MsSqlDataToText")>
-<Assembly: AssemblyDescription("")>
-<Assembly: AssemblyCompany("")>
+<Assembly: AssemblyDescription("(Mass) Export MS SQL data to text files")>
+<Assembly: AssemblyCompany("STA Travel GmbH")>
 <Assembly: AssemblyProduct("MsSqlDataToText")>
 <Assembly: AssemblyCopyright("Copyright ©  2020")>
 <Assembly: AssemblyTrademark("")>
