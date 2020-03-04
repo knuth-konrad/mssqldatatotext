@@ -15,12 +15,8 @@ Module modMain
 
    Sub Main(ByVal cmdLineArgs() As String)
 
-      'CommandLine.Parser.Default.ParseArguments(Of CmdOptions)(cmdLineArgs) _
-      '        .WithParsed(Function(opts As CmdOptions) RunOptionsAndReturnExitCode(opts)) _
-      '        .WithNotParsed(Function(errs As IEnumerable(Of [Error])) 1)
-
-      cBAUtilCC.ConHeadline("MsSqlDataToText")
-      cBAUtilCC.ConCopyright()
+      ConHeadline("MsSqlDataToText", 1)
+      ConCopyright()
       BlankLine()
 
       Console.WriteLine("Using configuration file: {0}", cmdLineArgs(0))
