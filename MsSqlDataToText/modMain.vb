@@ -15,7 +15,7 @@ Module modMain
 
    Sub Main(ByVal cmdLineArgs() As String)
 
-      ConHeadline("MsSqlDataToText", 1)
+      ConHeadline("MsSqlDataToText", 1, 1)
       ConCopyright()
       BlankLine()
 
@@ -177,7 +177,7 @@ Module modMain
                         txtLine &= sDelim
                      End If
 
-                     txtLine &= EnQuote(sTemp)
+                     txtLine &= EnQuote(sTemp.Replace(vbQuote(), vbQuote(2)))
 
                   End With
 
