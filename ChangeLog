@@ -1,3 +1,13 @@
+2020-03-05, v1.0.2.21449
+
+** FIX **
+- Replace column separator in data with (as of now hard-coded) "|"
+
+** NEW **
+- Configurable column selection for SQL SELECT statement per table
+	It is now possible to define the colun part of a SELECT statement in the configuration XML.
+
+
 2020-03-04, v1.0.0.30816
 
 ** FIX **

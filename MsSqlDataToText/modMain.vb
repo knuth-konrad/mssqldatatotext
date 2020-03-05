@@ -11,39 +11,58 @@ Imports libBAUtil.TextFileUtil
 Imports libBAUtil.DBTools.SQL.SqlDBUtil
 Imports libXmlConfig.Tools.Xml.Configuration
 
+
 Module modMain
+
+   ' XML sections
+   Public Const CFG_DATABASE As String = "Database"
+   Public Const CFG_EXPORT As String = "Export"
+   Public Const CFG_SKIPCOLUMNS As String = "SkipColumns"
+   Public Const CFG_TABLESELECT As String = "TableSelect"
+
+   ' Default SELECT statement
+   Public Const SQL_SELECT As String = "*"
 
    Sub Main(ByVal cmdLineArgs() As String)
 
-      ConHeadline("MsSqlDataToText", 1, 1)
+      ConHeadline("MsSqlDataToText")
       ConCopyright()
       BlankLine()
 
       Console.WriteLine("Using configuration file: {0}", cmdLineArgs(0))
+      BlankLine()
 
       ' Parse the configuration file
       Dim xmlConfig As New XmlConfig(cmdLineArgs(0))
 
-      If xmlConfig.Init() <> XmlConfig.eCfgXMLResult.xmlSuccess Then
+      Dim eRet As XmlConfig.eCfgXMLResult = xmlConfig.Init()
 
-         Console.WriteLine("Can't parse XML config")
-         Console.ReadLine()
+      Select Case eRet
 
-      Else
+         Case libXmlConfig.Tools.Xml.Configuration.XmlConfig.eCfgXMLResult.xmlErrFileNotFound
+            Console.WriteLine("Configuration XML {0} not found.", cmdLineArgs(0))
 
-         Console.WriteLine("Total records exported: {0}", ExportAllData(xmlConfig).ToString)
+         Case libXmlConfig.Tools.Xml.Configuration.XmlConfig.eCfgXMLResult.xmlErrNoConfigurationData
+            Console.WriteLine("No valid configuration found in {0}.", cmdLineArgs(0))
 
-      End If
+         Case libXmlConfig.Tools.Xml.Configuration.XmlConfig.eCfgXMLResult.xmlErrOtherUnknown
+            Console.WriteLine("Coundn't parse configuration XML {0}.", cmdLineArgs(0))
+
+         Case libXmlConfig.Tools.Xml.Configuration.XmlConfig.eCfgXMLResult.xmlSuccess
+
+            Console.WriteLine("Total records exported: {0}", ExportAllData(xmlConfig).ToString)
+
+      End Select
 
    End Sub
 
    Function ExportAllData(ByVal xmlConfig As XmlConfig) As Int32
 
-      Dim sConnectionstring As String = ""
-      sConnectionstring = xmlConfig.DefaultConfig.Sections.GetSection("Database").Entrys.GetEntry("ConnectionString").Value.ToString
+      Dim sConnectionstring As String = String.Empty
+      sConnectionstring = xmlConfig.DefaultConfig.Sections.GetSection(CFG_DATABASE).Entrys.GetEntry("ConnectionString").Value.ToString
 
-      Dim sTableQuery As String = ""
-      sTableQuery = xmlConfig.DefaultConfig.Sections.GetSection("Database").Entrys.GetEntry("TableQuery").Value.ToString
+      Dim sTableQuery As String = String.Empty
+      sTableQuery = xmlConfig.DefaultConfig.Sections.GetSection(CFG_DATABASE).Entrys.GetEntry("TableQuery").Value.ToString
 
       ' Retrieve all tables from the database schema
       Dim dbCon As New SqlConnection(sConnectionstring)
@@ -62,9 +81,6 @@ Module modMain
          lTotal += lRet
 
          Console.WriteLine(" - Records exported: " & lRet.ToString)
-         ' Console.WriteLine(ExportTableData(xmlConfig.DefaultConfig, row))
-         ' Console.WriteLine("dbDataset.Tables(0).Rows: " & row(0).ToString & "_" & row(1).ToString)
-
          BlankLine()
 
       Next
@@ -81,9 +97,9 @@ Module modMain
       ' Export the data of a specific table
 
       ' Create the text file name, based upon the table's name
-      Dim sOutFile As String = ""
+      Dim sOutFile As String = String.Empty
       sOutFile = CreateFilename(xmlCfg, row)
-      Console.WriteLine("-- Outfile: " & sOutFile)
+      Console.WriteLine("-- Export file: " & sOutFile)
 
       Dim sTablename As String = row(0).ToString & "." & row(1).ToString
       Dim lRows As Int32
@@ -103,17 +119,59 @@ Module modMain
          End If
          Dim dbCmd As New SqlCommand(sQuery, dbCon)
 
+         ' Should not take longer than 2 mins.
+         dbCmd.CommandTimeout = 240
+
          ' *** Count the number of rows in that table
-         Dim dbReader As SqlDataReader = dbCmd.ExecuteReader()
-         Do While dbReader.Read
-            lRows = libBAUtil.DBTools.SQL.SqlDBUtil.GetDBInteger(dbReader, "RecCount")
-         Loop
-         dbReader.Close()
+         Dim dbReader As SqlDataReader
+         Try
+
+            dbReader = dbCmd.ExecuteReader()
+
+            Do While dbReader.Read
+               lRows = libBAUtil.DBTools.SQL.SqlDBUtil.GetDBInteger(dbReader, "RecCount")
+            Loop
+
+
+         Catch exsql As SqlException
+
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.Red
+            Console.WriteLine("A database error while exporting data:")
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.Gray
+            Console.WriteLine("Trying to export table {0}, continuing with next table.", sTablename)
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.DarkGray
+            Console.WriteLine(exsql.Message)
+            BlankLine()
+
+         Catch ex As Exception
+
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.Red
+            Console.WriteLine("An error while exporting data:")
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.Gray
+            Console.WriteLine("Trying to export table {0}, continuing with next table.", sTablename)
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.DarkGray
+            Console.WriteLine(ex.Message)
+            BlankLine()
+
+         Finally
+
+            Console.ForegroundColor = ConsoleColor.Gray
+            If Not dbReader Is Nothing Then
+               dbReader.Close()
+            End If
+
+         End Try
 
          ' Skip empty table alltogether?
          If lRows = 0 Then
-            If (xmlCfg.Sections.GetSection("Export").Entrys.HasEntry("SkipEmptyTables") = True) AndAlso
-               (CBool(xmlCfg.Sections.GetSection("Export").Entrys.GetEntry("SkipEmptyTables").Value) = True) Then
+            If (xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.HasEntry("SkipEmptyTables") = True) AndAlso
+               (CBool(xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.GetEntry("SkipEmptyTables").Value) = True) Then
                Console.WriteLine(" - Skipping empty table: " & sTablename)
                Return lRows
             End If
@@ -122,7 +180,9 @@ Module modMain
 
          ' *** Do the actual data export of the table
          ' Retrieve the column names
+         Dim sqlSelect As String = GetSqlSelectClause(xmlCfg, sTablename)
          'sQuery = System.String.Format("SELECT * FROM [{0}].[{1}]", row(0), row(1))
+         'sQuery = System.String.Format("SELECT TOP 1 * FROM [{0}].[{1}]", row(0), row(1))
          sQuery = System.String.Format("SELECT TOP 1 * FROM [{0}].[{1}]", row(0), row(1))
 
          ' A value of 0 indicates no limit (an attempt to execute a command will wait indefinitely).
@@ -140,67 +200,109 @@ Module modMain
 
          ' *** Export the actual data
          ' Column delimiter
-         Dim sDelim As String = xmlCfg.Sections.GetSection("Export").Entrys.GetEntry("ColumnDelimiter").Value.ToString
+         Dim sDelim As String = xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.GetEntry("ColumnDelimiter").Value.ToString
 
-         sQuery = System.String.Format("SELECT * FROM [{0}].[{1}]", row(0), row(1))
+         'sQuery = System.String.Format("SELECT * FROM [{0}].[{1}]", row(0), row(1))
          'sQuery = System.String.Format("SELECT TOP 100 * FROM [{0}].[{1}]", row(0), row(1))
+         sQuery = System.String.Format("SELECT" & sqlSelect & "FROM [{0}].[{1}]", row(0), row(1))
          dbCmd.CommandText = sQuery
 
-         dbReader = dbCmd.ExecuteReader()
-         Do While dbReader.Read
+         Console.WriteLine(" - Using: {0}", sQuery)
 
-            Dim txtLine As String = ""
+         Try
 
-            For i As Int32 = 0 To dbReader.FieldCount - 1
+            dbReader = dbCmd.ExecuteReader()
 
-               ' Skip column?
-               If Not DoSkipColumn(xmlCfg, sTablename & "." & dbReader.GetName(i)) Then
+            Do While dbReader.Read
 
-                  Dim sTemp As String = ""
+               Dim txtLine As String = String.Empty
 
-                  With dbReader
+               For i As Int32 = 0 To dbReader.FieldCount - 1
 
-                     If Not .IsDBNull(i) And (.GetFieldType(i) Is GetType(Byte())) Then ' .DataType.ToString = "System.Byte[]"
-                        'Dim abyt() As Byte = CType(dbRow.Item(dbCol), Byte())
-                        Dim abyt() As Byte = CType(.GetValue(i), Byte())
-                        ' Console.WriteLine(" dbRow.Item: {0}", System.Text.ASCIIEncoding.ASCII.GetString(CType(dbRow.Item(dbCol), Byte())))
-                        For Each b As Byte In abyt
-                           sTemp &= b.ToString
-                        Next
-                        'Console.WriteLine(" dbRow.Item: {0}", sTemp)
-                     Else
-                        'Console.WriteLine(" dbRow.Item: {0}", dbRow.Item(dbCol).ToString)
-                        sTemp = ReadNullAsEmptyString(dbReader, i)
-                     End If
+                  ' Skip column?
+                  If Not DoSkipColumn(xmlCfg, sTablename & "." & dbReader.GetName(i)) Then
 
-                     If txtLine.Length > 0 Then
-                        txtLine &= sDelim
-                     End If
+                     Dim sTemp As String = String.Empty
 
-                     txtLine &= EnQuote(sTemp.Replace(vbQuote(), vbQuote(2)))
+                     With dbReader
 
-                  End With
+                        If Not .IsDBNull(i) And (.GetFieldType(i) Is GetType(Byte())) Then ' .DataType.ToString = "System.Byte[]"
+                           Dim abyt() As Byte = CType(.GetValue(i), Byte())
+                           If abyt.Length <= 16 Then
+                              For Each b As Byte In abyt
+                                 sTemp &= Convert.ToString(b, 16)
+                              Next
+                              sTemp = "0x" & sTemp
+                           Else
+                              For Each b As Byte In abyt
+                                 sTemp &= Convert.ToString(b)
+                              Next
+                           End If
+                        Else
+                           sTemp = ReadNullAsEmptyString(dbReader, i)
+                        End If
 
-               End If
+                        sTemp = SanitizeCSV(sTemp, sDelim)
 
-            Next
+                        If txtLine.Length > 0 Then
+                           txtLine &= sDelim
+                        End If
 
-            TxtWriteLine(sOutFile, txtLine)
+                        txtLine &= EnQuote(sTemp)
 
-         Loop
-         dbReader.Close()
+                     End With
 
+                  End If
+
+               Next
+
+               TxtWriteLine(sOutFile, txtLine)
+
+            Loop
+
+         Catch exsql As SqlException
+
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.Red
+            Console.WriteLine("A database error while exporting data:")
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.Gray
+            Console.WriteLine("Trying to export table {0}, continuing with next table.", sTablename)
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.DarkGray
+            Console.WriteLine(exsql.Message)
+            BlankLine()
+
+         Catch ex As Exception
+
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.Red
+            Console.WriteLine("An error while exporting data:")
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.Gray
+            Console.WriteLine("Trying to export table {0}, continuing with next table.", sTablename)
+            BlankLine()
+            Console.ForegroundColor = ConsoleColor.DarkGray
+            Console.WriteLine(ex.Message)
+            BlankLine()
+
+         Finally
+
+            Console.ForegroundColor = ConsoleColor.Gray
+            dbReader.Close()
+
+         End Try
 
          'For Each dbRow As DataRow In dbDataTable.Rows
 
-         '   Dim txtLine As String = ""
+         '   Dim txtLine As String = String.Empty
 
          '   For Each dbCol As DataColumn In dbDataTable.Columns
 
          '      'Console.WriteLine("dbCol.Name: {0}", dbCol.ColumnName)
          '      'Console.WriteLine("dbCol.Type: {0}", dbCol.DataType.ToString)
 
-         '      Dim sTemp As String = ""
+         '      Dim sTemp As String = String.Empty
 
          '      If Not dbRow.IsNull(dbCol) And dbCol.DataType.ToString = "System.Byte[]" Then
          '         Dim abyt() As Byte = CType(dbRow.Item(dbCol), Byte())
@@ -237,9 +339,9 @@ Module modMain
    Function CreateFilename(ByVal xmlCfg As IXmlCfg, ByVal row As DataRow, Optional ByVal sExtension As String = ".csv") As String
 
       ' Construct the output file name
-      Dim sRet As String = ""
+      Dim sRet As String = String.Empty
 
-      sRet = NormalizePath(xmlCfg.Sections.GetSection("Export").Entrys.GetEntry("DestinationPath").Value.ToString) & row(0).ToString & "_" & row(1).ToString & sExtension
+      sRet = NormalizePath(xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.GetEntry("DestinationPath").Value.ToString) & row(0).ToString & "_" & row(1).ToString & sExtension
       Return sRet
 
    End Function
@@ -247,18 +349,18 @@ Module modMain
    Function CreateTextFileHeader(xmlCfg As IXmlCfg, ByVal exportFile As String, ByVal tableName As String, ByVal dbCols As DataColumnCollection) As Boolean
 
       ' Safe guard - write header at all?
-      If xmlCfg.Sections.GetSection("Export").Entrys.HasEntry("ColumnNameAsFirstLine") Then
+      If xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.HasEntry("ColumnNameAsFirstLine") Then
          Dim o As IXmlCfgEntry
-         o = xmlCfg.Sections.GetSection("Export").Entrys.GetEntry("ColumnNameAsFirstLine")
+         o = xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.GetEntry("ColumnNameAsFirstLine")
          If CBool(o.Value) = False Then
             Return True
          End If
       End If
 
-      Dim sDelim As String = ""
-      Dim sHdrText As String = ""
+      Dim sDelim As String = String.Empty
+      Dim sHdrText As String = String.Empty
 
-      sDelim = xmlCfg.Sections.GetSection("Export").Entrys.GetEntry("ColumnDelimiter").Value.ToString
+      sDelim = xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.GetEntry("ColumnDelimiter").Value.ToString
 
       For Each dbCol As DataColumn In dbCols
 
@@ -283,7 +385,7 @@ Module modMain
    Function DoSkipTable(ByVal xmlCfg As IXmlCfg, ByVal tableName As String) As Boolean
 
       ' Determine if a table should be skipped
-      For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection("SkipColumns").Entrys.CfgEntrys
+      For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_SKIPCOLUMNS).Entrys.CfgEntrys
          'Console.WriteLine("Config value: {0}, parameter: {1}", o.Value.ToString, tableName)
          If o.Value.ToString = tableName & ".*" Then
             Return True
@@ -297,7 +399,7 @@ Module modMain
    Function DoSkipColumn(ByVal xmlCfg As IXmlCfg, ByVal columnName As String) As Boolean
 
       ' Determine if a certain column should be skipped
-      For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection("SkipColumns").Entrys.CfgEntrys
+      For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_SKIPCOLUMNS).Entrys.CfgEntrys
          'Console.WriteLine("Config value: {0}, parameter: {1}", o.Value.ToString, tableName)
          If o.Value.ToString = columnName Then
             Return True
@@ -305,6 +407,47 @@ Module modMain
       Next
 
       Return False
+
+   End Function
+
+   Function GetSqlSelectClause(ByVal xmlCfg As IXmlCfg, ByVal tableName As String) As String
+      ' Retrieve the SQL SELECT clause for the specified table
+
+      ' Default hard-coded value
+      Dim sResult As String = SQL_SELECT
+
+      ' Default value from configuration, if any
+      For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_TABLESELECT).Entrys.CfgEntrys
+         If Left(o.Value.ToString, 2) = "*|" Then
+            sResult = Mid(o.Value.ToString, 3)
+         End If
+      Next
+
+      ' Specific select for this table?
+      For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_TABLESELECT).Entrys.CfgEntrys
+         If Left(o.Value.ToString, tableName.Length + 1) = tableName & "|" Then
+            sResult = Mid(o.Value.ToString, tableName.Length + 2)
+         End If
+      Next
+
+      ' Console.WriteLine("SELECT from config: {0}", sResult)
+
+      Return " " & sResult & " "
+
+   End Function
+
+   Function SanitizeCSV(ByVal csvData As String, ByVal colDelim As String, Optional ByVal colDelimSubstitute As String = "|") As String
+      ' Sanitize CSV data
+
+      Dim sResult As String = String.Empty
+
+      ' Single double quote with teo double quotes
+      sResult = csvData.Replace(vbQuote(), vbQuote(2))
+
+      ' Column delimiter within data?
+      sResult = csvData.Replace(colDelim, colDelimSubstitute)
+
+      Return sResult
 
    End Function
 

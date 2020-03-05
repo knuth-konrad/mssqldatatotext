@@ -16,7 +16,7 @@ The application connects to a _(configurable)_ MS SQL server. It fetches the sch
 ## Configuration XML
 MsSqlDataToText retrieves all necessary configuration data form a single XML file passed as a parameter, e.g. `MsSqlDataToText.exe MyConfiguration.xml`.
 
-The file is divided in three configuration sections, `Database`, `Export` and `SkipColumns`, which control the actions taken by MsSqlDataToText.
+The file is divided in four configuration sections, `Database`, `Export`, `SkipColumns` and `TableSelect`, which control the actions taken by MsSqlDataToText.
 
 ### Section __Database__
 Defines the connection to the _(source )_ MS SQL server. This is literally the [ADO.NET connection string](https://www.connectionstrings.com/sql-server/).
@@ -40,6 +40,14 @@ Should the first line of each created text file consist of the database column n
 MsSqlDataToText doesn't handle binary column datatypes such as `IMAGE`, `BINARY` properly partly due to the fact that I can't know what that binary stream is supposed to be. An image, a document, an email? So here's a way to exclude specific columns or even whole tables from the export.
 
 List any column which shouldn't be exported in the format `<schema>.<tablename>.<column>`, e.g. `dbo.Customerdata.ID`. If a whole table should be skipped altogether, use `*` _(asterix)_ as the column name, e.g. `dbo.Customerdata.*`.
+
+### Section __TableSelect__
+Instead of exporting all data from each table, this section let's you define specific 
+columns to export, ommiting unnecessary/unwanted data that way and potentially speed up the export.
+
+List any individual SELECT statement for a certain table in the format `<schema>.<tablename>|<SELECT columns part>`, e.g. `dbo.Customerdata|ID, LastName`.
+
+To define the default SELECT statement, use `*` _(asterix)_ as the table name, e.g. `*|*`. This is also the default, if not set otherwise here, resulting in a query like `"SELECT * FROM <table>"`.
 
 
 Here's a sample XML:
@@ -100,6 +108,24 @@ Here's a sample XML:
 					</CfgEntry>
 					<CfgEntry Key="ColumnName" IsBinary="false" VarType="8">
 						<![CDATA[dbo.Mail_Merges.*]]>
+					</CfgEntry>
+				</CfgEntrys>
+			</CfgSection>
+			<CfgSection Key="TableSelect">
+			<!-- 
+			Define individual SQL SELECT statements for tables.
+			Only list the column part after SELECT and up until FROM, e.g. for "SELECT ID, LastName FROM dbo.CustomerData"
+			use "ID, LastName"
+			-->
+				<CfgEntrys>
+				<!-- 
+				List any individual SELECT statement for a certain table in the format <schema>.<tablename>|<SELECT columns part>, e.g. dbo.Customerdata|ID, LastName
+				To define the default SELECT statement, use '*' as the table name, e.g. *|*
+				The default column select is "*", i.e. "*|*" will result in "SELECT * FROM <table>"
+				-->
+					<CfgEntry Key="SQLSelect" IsBinary="false" VarType="8">
+					<!-- The default -->
+						<![CDATA[*|*]]>
 					</CfgEntry>
 				</CfgEntrys>
 			</CfgSection>
