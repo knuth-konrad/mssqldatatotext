@@ -1,3 +1,10 @@
+2020-xx-xx, v1.x.x.x
+
+** CHANGE **
+- Display current export progress of current table's data.
+	Provides UI feedback.
+
+
 2020-03-09, v1.1.14.19119
 
 ** FIX **

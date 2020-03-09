@@ -19,9 +19,13 @@ Module modMain
    ' XML sections
    Public Const CFG_DATABASE As String = "Database"
    Public Const CFG_EXPORT As String = "Export"
+   Public Const CFG_EXPORTCOLUMNS As String = "ExportColumns"
    Public Const CFG_SKIPCOLUMNS As String = "SkipColumns"
    Public Const CFG_TABLESELECT As String = "TableSelect"
    Public Const CFG_TABELNAMESFROMDB As String = "TableNamesFromDB"
+
+   ' Message frequency "Exporting rec x of y"
+   Public Const MSG_FREQUENCY As Int32 = 100
 
    ' Default SELECT statement
    Public Const SQL_SELECT As String = "*"
@@ -239,6 +243,8 @@ Module modMain
 
             dbReader = dbCmd.ExecuteReader()
 
+            Dim lRecCount As Int32
+
             Do While dbReader.Read
 
                Dim txtLine As String = String.Empty
@@ -246,7 +252,7 @@ Module modMain
                For i As Int32 = 0 To dbReader.FieldCount - 1
 
                   ' Skip column?
-                  If Not DoSkipColumn(xmlCfg, sTablename & "." & dbReader.GetName(i)) Then
+                  If Not DoSkipColumn(xmlCfg, sTablename, dbReader.GetName(i)) Then
 
                      Dim sTemp As String = String.Empty
 
@@ -284,7 +290,18 @@ Module modMain
 
                TxtWriteLine(sOutFile, txtLine)
 
+               lRecCount += 1
+               If lRecCount Mod MSG_FREQUENCY = 0 Then
+                  Console.SetCursorPosition(0, Console.CursorTop)
+                  Console.Write(" - Exporting record {0} of {1}", lRecCount.ToString, lRows.ToString)
+               End If
+
             Loop
+
+            ' Fake the last update
+            Console.SetCursorPosition(0, Console.CursorTop)
+            Console.WriteLine(" - Exporting record {0} of {1}", lRows.ToString, lRows.ToString)
+            'BlankLine()
 
          Catch exsql As SqlException
 
@@ -318,43 +335,6 @@ Module modMain
             dbReader.Close()
 
          End Try
-
-         'For Each dbRow As DataRow In dbDataTable.Rows
-
-         '   Dim txtLine As String = String.Empty
-
-         '   For Each dbCol As DataColumn In dbDataTable.Columns
-
-         '      'Console.WriteLine("dbCol.Name: {0}", dbCol.ColumnName)
-         '      'Console.WriteLine("dbCol.Type: {0}", dbCol.DataType.ToString)
-
-         '      Dim sTemp As String = String.Empty
-
-         '      If Not dbRow.IsNull(dbCol) And dbCol.DataType.ToString = "System.Byte[]" Then
-         '         Dim abyt() As Byte = CType(dbRow.Item(dbCol), Byte())
-         '         ' Console.WriteLine(" dbRow.Item: {0}", System.Text.ASCIIEncoding.ASCII.GetString(CType(dbRow.Item(dbCol), Byte())))
-         '         For Each b As Byte In abyt
-         '            sTemp &= b.ToString
-         '         Next
-         '         'Console.WriteLine(" dbRow.Item: {0}", sTemp)
-         '      Else
-         '         'Console.WriteLine(" dbRow.Item: {0}", dbRow.Item(dbCol).ToString)
-         '         sTemp = dbRow.Item(dbCol).ToString
-         '      End If
-
-         '      If txtLine.Length > 0 Then
-         '         txtLine &= sDelim
-         '      End If
-
-         '      txtLine &= EnQuote(sTemp)
-
-         '   Next
-
-         '   TxtWriteLine(sOutFile, txtLine)
-
-         'Next
-
-         'dbDataTable.WriteXml(sOutFile, XmlWriteMode.IgnoreSchema, False)
 
       End If
 
@@ -390,7 +370,7 @@ Module modMain
 
       For Each dbCol As DataColumn In dbCols
 
-         If Not DoSkipColumn(xmlCfg, tableName & "." & dbCol.ColumnName) Then
+         If Not DoSkipColumn(xmlCfg, tableName, dbCol.ColumnName) Then
             If sHdrText.Length > 0 Then
                sHdrText &= sDelim
             End If
@@ -411,28 +391,59 @@ Module modMain
    Function DoSkipTable(ByVal xmlCfg As IXmlCfg, ByVal tableName As String) As Boolean
 
       ' Determine if a table should be skipped
-      For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_SKIPCOLUMNS).Entrys.CfgEntrys
-         'Console.WriteLine("Config value: {0}, parameter: {1}", o.Value.ToString, tableName)
-         If o.Value.ToString = tableName & ".*" Then
-            Return True
-         End If
-      Next
+      ' Section ExportColumns takes precedence over section SkipColumns, so check that first
+      If xmlCfg.Sections.HasSection(CFG_EXPORTCOLUMNS) = True Then
 
-      Return False
+         ' If the table name is mentioned anywhere, it shoudln't be skipped completely
+         For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_EXPORTCOLUMNS).Entrys.CfgEntrys
+            If Left(o.Value.ToString, tableName.Length) = tableName Then
+               Return False
+            End If
+         Next
+
+         Return True
+
+      Else
+
+         For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_SKIPCOLUMNS).Entrys.CfgEntrys
+            If o.Value.ToString = tableName & ".*" Then
+               Return True
+            End If
+         Next
+
+         Return False
+
+      End If
 
    End Function
 
-   Function DoSkipColumn(ByVal xmlCfg As IXmlCfg, ByVal columnName As String) As Boolean
+   Function DoSkipColumn(ByVal xmlCfg As IXmlCfg, ByVal tableName As String, ByVal columnName As String) As Boolean
 
-      ' Determine if a certain column should be skipped
-      For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_SKIPCOLUMNS).Entrys.CfgEntrys
-         'Console.WriteLine("Config value: {0}, parameter: {1}", o.Value.ToString, tableName)
-         If o.Value.ToString = columnName Then
-            Return True
-         End If
-      Next
+      ' Entry in XML is of format tableName.columnName or tableName.*
 
-      Return False
+      ' Section ExportColumns takes precedence over section SkipColumns, so check that first
+      If xmlCfg.Sections.HasSection(CFG_EXPORTCOLUMNS) = True Then
+
+         For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_EXPORTCOLUMNS).Entrys.CfgEntrys
+            If o.Value.ToString = String.Format("{0}.{1}", tableName, columnName) OrElse o.Value.ToString = tableName & ".*" Then
+               Return False
+            End If
+         Next
+
+         Return True
+
+      Else
+
+         ' Determine if a certain column should be skipped
+         For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_SKIPCOLUMNS).Entrys.CfgEntrys
+            If o.Value.ToString = String.Format("{0}.{1}", tableName, columnName) Then
+               Return True
+            End If
+         Next
+
+         Return False
+
+      End If
 
    End Function
 
