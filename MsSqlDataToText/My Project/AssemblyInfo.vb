@@ -9,10 +9,10 @@ Imports System.Runtime.InteropServices
 ' Review the values of the assembly attributes
 
 <Assembly: AssemblyTitle("MsSqlDataToText")>
-<Assembly: AssemblyDescription("(Mass) Export MS SQL data to text files")>
+<Assembly: AssemblyDescription("(Mass) Export MS SQL data to (CSV) text files")>
 <Assembly: AssemblyCompany("STA Travel GmbH")>
 <Assembly: AssemblyProduct("MsSqlDataToText")>
-<Assembly: AssemblyCopyright("Copyright ©  2020")>
+<Assembly: AssemblyCopyright("Copyright © 2020 by STA Travel GmbH")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(False)>
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")>
 
-<Assembly: AssemblyVersion("1.2.14.20065")>
-<Assembly: AssemblyFileVersion("1.0.2.21449")>
+<Assembly: AssemblyVersion("1.3.26.20069")>
+<Assembly: AssemblyFileVersion("1.1.14.19119")>

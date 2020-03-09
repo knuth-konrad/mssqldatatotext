@@ -1,6 +1,8 @@
 ' Idea shamelessly stolen from https://stackoverflow.com/questions/30791482/sql-server-management-studio-2012-export-all-tables-of-database-as-csv
 ' Imports CommandLine
 
+' ToDo: Anzahl Datansätze
+
 Imports System.Data
 Imports System.Data.SqlClient
 
@@ -19,6 +21,7 @@ Module modMain
    Public Const CFG_EXPORT As String = "Export"
    Public Const CFG_SKIPCOLUMNS As String = "SkipColumns"
    Public Const CFG_TABLESELECT As String = "TableSelect"
+   Public Const CFG_TABELNAMESFROMDB As String = "TableNamesFromDB"
 
    ' Default SELECT statement
    Public Const SQL_SELECT As String = "*"
@@ -71,11 +74,33 @@ Module modMain
       ' Load up the tables and schemas in a dataset
       Dim dbAdapter As New SqlDataAdapter(dbCmd)
       Dim dbDataset As New DataSet
+
       dbAdapter.Fill(dbDataset)
+
+      ' Section for storing table names
+      ' AddTableNamesXML
+      Dim bolAddTableNames As Boolean
+      Dim xmlSection As IXmlCfgSection = xmlConfig.DefaultConfig.Sections.GetSection(CFG_EXPORT)
+      If xmlSection.Entrys.HasEntry("AddTableNamesXML") AndAlso CType(xmlSection.Entrys.GetEntry("AddTableNamesXML").Value, Boolean) Then
+         bolAddTableNames = True
+         If Not xmlConfig.DefaultConfig.Sections.HasSection(CFG_TABELNAMESFROMDB) Then
+            xmlConfig.DefaultConfig.Sections.CfgSections.Add(New XmlCfgSection(CFG_TABELNAMESFROMDB))
+         End If
+      End If
+
 
       ' Loop through all tables and export a CSV of the Table Data
       Dim lRet, lTotal As Int32
       For Each row As DataRow In dbDataset.Tables(0).Rows
+
+         'Console.WriteLine("{0}.{1}", row(0), row(1))
+
+         ' Add to the XML, might be useful for SkipColumns
+         If bolAddTableNames = True Then
+            xmlSection = xmlConfig.DefaultConfig.Sections.GetSection(CFG_TABELNAMESFROMDB)
+            Dim xmlEntry As New XmlCfgEntry(CFG_TABELNAMESFROMDB, "ColumnName", String.Format("{0}.{1}", row(0), row(1)))
+            xmlSection.Entrys.CfgEntrys.Add(xmlEntry)
+         End If
 
          lRet = ExportTableData(xmlConfig.DefaultConfig, dbCon, row)
          lTotal += lRet
@@ -84,6 +109,11 @@ Module modMain
          BlankLine()
 
       Next
+
+      ' Onyl save config, we changed it
+      If bolAddTableNames = True Then
+         xmlConfig.SaveConfig()
+      End If
 
       If dbCon.State = ConnectionState.Closed Then
          dbCon.Open()
@@ -181,8 +211,6 @@ Module modMain
          ' *** Do the actual data export of the table
          ' Retrieve the column names
          Dim sqlSelect As String = GetSqlSelectClause(xmlCfg, sTablename)
-         'sQuery = System.String.Format("SELECT * FROM [{0}].[{1}]", row(0), row(1))
-         'sQuery = System.String.Format("SELECT TOP 1 * FROM [{0}].[{1}]", row(0), row(1))
          sQuery = System.String.Format("SELECT TOP 1 * FROM [{0}].[{1}]", row(0), row(1))
 
          ' A value of 0 indicates no limit (an attempt to execute a command will wait indefinitely).
@@ -202,8 +230,6 @@ Module modMain
          ' Column delimiter
          Dim sDelim As String = xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.GetEntry("ColumnDelimiter").Value.ToString
 
-         'sQuery = System.String.Format("SELECT * FROM [{0}].[{1}]", row(0), row(1))
-         'sQuery = System.String.Format("SELECT TOP 100 * FROM [{0}].[{1}]", row(0), row(1))
          sQuery = System.String.Format("SELECT" & sqlSelect & "FROM [{0}].[{1}]", row(0), row(1))
          dbCmd.CommandText = sQuery
 
@@ -439,13 +465,15 @@ Module modMain
    Function SanitizeCSV(ByVal csvData As String, ByVal colDelim As String, Optional ByVal colDelimSubstitute As String = "|") As String
       ' Sanitize CSV data
 
-      Dim sResult As String = String.Empty
+      Dim sResult As String = csvData
 
-      ' Single double quote with teo double quotes
-      sResult = csvData.Replace(vbQuote(), vbQuote(2))
+      If sResult.Contains(vbQuote()) Then
+         ' Single double quote with two double quotes
+         sResult = sResult.Replace(vbQuote(), vbQuote(2))
+      End If
 
       ' Column delimiter within data?
-      sResult = csvData.Replace(colDelim, colDelimSubstitute)
+      sResult = sResult.Replace(colDelim, colDelimSubstitute)
 
       Return sResult
 
