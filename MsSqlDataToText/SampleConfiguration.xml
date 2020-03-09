@@ -13,7 +13,7 @@
 					</CfgEntry>
 					<CfgEntry Key="TableQuery" IsBinary="false" VarType="8">
 					<!-- Define which tables to export, this query (the default) selects all tables = exports all data of those tables -->
-						<![CDATA[SELECT schemas.name as schemaName, tables.name as tableName from sys.tables inner join sys.schemas ON tables.schema_id = schemas.schema_id]]>
+						<![CDATA[SELECT schemas.name as schemaName, tables.name as tableName FROM sys.tables INNER JOIN sys.schemas ON tables.schema_id = schemas.schema_id ORDER BY schemas.name, tables.name]]>
 					</CfgEntry>
 				</CfgEntrys>
 			</CfgSection>
