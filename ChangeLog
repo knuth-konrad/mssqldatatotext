@@ -1,3 +1,32 @@
+2020-03-10, v1.2.27.20266
+
+** FIX **
+- Errornous creation of empty CSV files
+	When validating if a tbale should be exported, the existance of similar named table names would 
+	result in the errornous craetion of an empty CSV file.
+
+** CHANGE **
+- Display current export progress of current table's data.
+	Provides UI feedback.
+
+
+2020-03-09, v1.1.14.19119
+
+** FIX **
+- Escape/replace one double quotes with two double quotes in textual data as per CSV specification.
+	This time for real!
+
+
+2020-03-05, v1.0.2.21449
+
+** FIX **
+- Replace column separator in data with (as of now hard-coded) "|"
+
+** NEW **
+- Configurable column selection for SQL SELECT statement per table
+	It is now possible to define the colun part of a SELECT statement in the configuration XML.
+
+
 2020-03-04, v1.0.0.30816
 
 ** FIX **

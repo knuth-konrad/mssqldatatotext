@@ -13,7 +13,7 @@
 					</CfgEntry>
 					<CfgEntry Key="TableQuery" IsBinary="false" VarType="8">
 					<!-- Define which tables to export, this query (the default) selects all tables = exports all data of those tables -->
-						<![CDATA[SELECT schemas.name as schemaName, tables.name as tableName from sys.tables inner join sys.schemas ON tables.schema_id = schemas.schema_id]]>
+						<![CDATA[SELECT schemas.name as schemaName, tables.name as tableName FROM sys.tables INNER JOIN sys.schemas ON tables.schema_id = schemas.schema_id ORDER BY schemas.name, tables.name]]>
 					</CfgEntry>
 				</CfgEntrys>
 			</CfgSection>
@@ -57,11 +57,31 @@
 						<![CDATA[dbo.Rn_Interaction_Email.*]]>
 					</CfgEntry>
 					<CfgEntry Key="ColumnName" IsBinary="false" VarType="8">
+						<![CDATA[dbo_Journal_History.*]]>
+					</CfgEntry>
+					<CfgEntry Key="ColumnName" IsBinary="false" VarType="8">
 						<![CDATA[dbo.Mail_Merges.*]]>
+					</CfgEntry>
+				</CfgEntrys>
+			</CfgSection>
+			<CfgSection Key="TableSelect">
+			<!-- 
+			Define individual SQL SELECT statements for tables.
+			Only list the column part after SELECT and up until FROM, e.g. for "SELECT ID, LastName FROM dbo.CustomerData"
+			use "ID, LastName"
+			-->
+				<CfgEntrys>
+				<!-- 
+				List any individual SELECT statement for a certain table in the format <schema>.<tablename>|<SELECT columns part>, e.g. dbo.Customerdata|ID, LastName
+				To define the default SELECT statement, use '*' as the table name, e.g. *|*
+				The default column select is "*", i.e. "*|*" will result in "SELECT * FROM <table>"
+				-->
+					<CfgEntry Key="SQLSelect" IsBinary="false" VarType="8">
+					<!-- The default -->
+						<![CDATA[*|*]]>
 					</CfgEntry>
 				</CfgEntrys>
 			</CfgSection>
 		</CfgSections>
 	</Configuration>
 </Configurations>
-
