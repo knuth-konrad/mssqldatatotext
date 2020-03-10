@@ -1,4 +1,9 @@
-2020-xx-xx, v1.x.x.x
+2020-03-10, v1.2.27.20266
+
+** FIX **
+- Errornous creation of empty CSV files
+	When validating if a tbale should be exported, the existance of similar named table names would 
+	result in the errornous craetion of an empty CSV file.
 
 ** CHANGE **
 - Display current export progress of current table's data.

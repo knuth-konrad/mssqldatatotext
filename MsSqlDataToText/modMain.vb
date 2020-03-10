@@ -1,8 +1,6 @@
 ' Idea shamelessly stolen from https://stackoverflow.com/questions/30791482/sql-server-management-studio-2012-export-all-tables-of-database-as-csv
 ' Imports CommandLine
 
-' ToDo: Anzahl Datansätze
-
 Imports System.Data
 Imports System.Data.SqlClient
 
@@ -16,7 +14,8 @@ Imports libXmlConfig.Tools.Xml.Configuration
 
 Module modMain
 
-   ' XML sections
+#Region "Declarations"
+   ' Sections in the XML configuration file
    Public Const CFG_DATABASE As String = "Database"
    Public Const CFG_EXPORT As String = "Export"
    Public Const CFG_EXPORTCOLUMNS As String = "ExportColumns"
@@ -30,6 +29,8 @@ Module modMain
    ' Default SELECT statement
    Public Const SQL_SELECT As String = "*"
 
+#End Region
+
    Sub Main(ByVal cmdLineArgs() As String)
 
       ConHeadline("MsSqlDataToText")
@@ -38,6 +39,9 @@ Module modMain
 
       Console.WriteLine("Using configuration file: {0}", cmdLineArgs(0))
       BlankLine()
+
+      ' *** Debug
+      ' AnyKey()
 
       ' Parse the configuration file
       Dim xmlConfig As New XmlConfig(cmdLineArgs(0))
@@ -63,6 +67,16 @@ Module modMain
 
    End Sub
 
+   ''' <summary>
+   ''' Main processing loop. Iterates through all tables in a database and exports the data 
+   ''' of these tables to a CSV per table, according to the settings in the XML configuration file.
+   ''' </summary>
+   ''' <param name="xmlConfig">
+   ''' Initialized XML configuration handler.
+   ''' </param>
+   ''' <returns>
+   ''' Total number of records exported.
+   ''' </returns>
    Function ExportAllData(ByVal xmlConfig As XmlConfig) As Int32
 
       Dim sConnectionstring As String = String.Empty
@@ -96,8 +110,6 @@ Module modMain
       ' Loop through all tables and export a CSV of the Table Data
       Dim lRet, lTotal As Int32
       For Each row As DataRow In dbDataset.Tables(0).Rows
-
-         'Console.WriteLine("{0}.{1}", row(0), row(1))
 
          ' Add to the XML, might be useful for SkipColumns
          If bolAddTableNames = True Then
@@ -388,6 +400,18 @@ Module modMain
 
    End Function
 
+   ''' <summary>
+   ''' Determine if a database table should be at least partially exported at all.
+   ''' </summary>
+   ''' <param name="xmlCfg">
+   ''' Current configuration object.
+   ''' </param>
+   ''' <param name="tableName">
+   ''' Check this table. tableName is in the format (schema).(database), e.g. dob.CustomerData
+   ''' </param>
+   ''' <returns>
+   ''' Export this table? <see langword="true"/>/<see langword="false"/>.
+   ''' </returns>
    Function DoSkipTable(ByVal xmlCfg As IXmlCfg, ByVal tableName As String) As Boolean
 
       ' Determine if a table should be skipped
@@ -395,8 +419,11 @@ Module modMain
       If xmlCfg.Sections.HasSection(CFG_EXPORTCOLUMNS) = True Then
 
          ' If the table name is mentioned anywhere, it shoudln't be skipped completely
+         ' To prevent similar table names resulting in the irregular creation of empty CSV files, add
+         ' the '.' to the comparison.
+         ' Fixes issue https://dev.sta.net/Knuth.Konrad/mssqldatatotext/issues/3
          For Each o As IXmlCfgEntry In xmlCfg.Sections.GetSection(CFG_EXPORTCOLUMNS).Entrys.CfgEntrys
-            If Left(o.Value.ToString, tableName.Length) = tableName Then
+            If Left(o.Value.ToString, tableName.Length + 1) = tableName & "." Then
                Return False
             End If
          Next
