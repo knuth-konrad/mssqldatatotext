@@ -270,6 +270,8 @@ Module modMain
 
                      With dbReader
 
+                        ' ** BUNAC special **
+                        ' Integers (row IDs) stored in binary columns. Convert data from those to a hex string
                         If Not .IsDBNull(i) And (.GetFieldType(i) Is GetType(Byte())) Then ' .DataType.ToString = "System.Byte[]"
                            Dim abyt() As Byte = CType(.GetValue(i), Byte())
                            If abyt.Length <= 16 Then
