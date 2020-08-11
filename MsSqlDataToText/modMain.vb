@@ -33,6 +33,8 @@ Module modMain
 
    Sub Main(ByVal cmdLineArgs() As String)
 
+      ' ToDo: XML config for "free form SQL" export, allowing JOINs etc.
+
       ConHeadline("MsSqlDataToText")
       ConCopyright()
       BlankLine()
