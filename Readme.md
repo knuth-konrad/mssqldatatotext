@@ -1,18 +1,31 @@
 # MsSqlDataToText
 
+Export large datasets from MS SQL server to CSV files.
+
+- [MsSqlDataToText](#mssqldatatotext)
+  - [Purpose / Origin](#purpose--origin)
+  - [How it works](#how-it-works)
+  - [Configuration XML](#configuration-xml)
+    - [Section __Database__](#section-database)
+    - [Section __Export__](#section-export)
+    - [Section __SkipColumns__](#section-skipcolumns)
+    - [Section __TableSelect__](#section-tableselect)
+  - [Installation](#installation)
+  - [Known limitations](#known-limitations)
+
 ## Purpose / Origin
 
 A command line tool to export large MS SQL databases to text files _(*.csv)_. The need for this tool arose during the BUNAC project. Data stored in a MS SQL server database needed to be exported in a format usable by HPM _(a Linux shop)_.
 
 Non of the out-of-the-box solutions I tried out, did work. E.g. Oracle's MySQL Workbench, MS SQL's Export assistant. Neither did various scripts / suggestions found online. The closest solution was a PowerShell script found on [StackOverflow](https://stackoverflow.com/questions/30791482/sql-server-management-studio-2012-export-all-tables-of-database-as-csv).
 
-Due to a) the size of some of the tables and b) column datatypes such as `binary` and `image`, failed with a _System.OutOfMemoryException_. But the idea behind it was sound, so I replaced the failing one-liner data consumption `SqlDataAdatpter.Fill(DataSet)` with a loop of `SqlDataReader.GetValue()`.
+Due to a) the size of some of the tables and b) column data types such as `binary` and `image`, failed with a _System.OutOfMemoryException_. But the idea behind it was sound, so I replaced the failing one-liner data consumption `SqlDataAdapter.Fill(DataSet)` with a loop of `SqlDataReader.GetValue()`.
 
 I tried to make the resulting program as generic/configurable as I could (think of), without wasting too much time on it.
 
 ## How it works
 
-The application connects to a _(configurable)_ MS SQL server. It fetches the schema of a _(configurable)_ database and exports __all__ data of __all__ tables to text files (one file per table) into a _(configurable)_ folder. The file names created for each databae table follow the format `<schema>.<table>.csv`, e.g. `dbo.CustomerDat.csv`.
+The application connects to a _(configurable)_ MS SQL server. It fetches the schema of a _(configurable)_ database and exports __all__ data of __all__ tables to text files (one file per table) into a _(configurable)_ folder. The file names created for each database table follow the format `<schema>.<table>.csv`, e.g. `dbo.CustomerDat.csv`.
 
 ## Configuration XML
 
@@ -30,7 +43,7 @@ This SELECT statement retrieves the schemas/tables of which data should be expor
 
 ### Section __Export__
 
-Controls export behaviour:
+Controls export behavior:
 
 - _DestinationPath_  
 The folder in which the resulting CSV files should be created. ___Please note___: make sure there's enough space for the resulting text files.
@@ -46,17 +59,17 @@ Should the first line of each created text file consist of the database column n
 
 ### Section __SkipColumns__
 
-MsSqlDataToText doesn't handle binary column datatypes such as `IMAGE`, `BINARY` properly partly due to the fact that I can't know what that binary stream is supposed to be. An image, a document, an email? So here's a way to exclude specific columns or even whole tables from the export.
+MsSqlDataToText doesn't handle binary column data types such as `IMAGE`, `BINARY` properly partly due to the fact that I can't know what that binary stream is supposed to be. An image, a document, an email? So here's a way to exclude specific columns or even whole tables from the export.
 
-List any column which shouldn't be exported in the format `<schema>.<tablename>.<column>`, e.g. `dbo.Customerdata.ID`. If a whole table should be skipped altogether, use `*` _(asterix)_ as the column name, e.g. `dbo.Customerdata.*`.
+List any column which shouldn't be exported in the format `<schema>.<tablename>.<column>`, e.g. `dbo.Customerdata.ID`. If a whole table should be skipped altogether, use `*` _(asterisk)_ as the column name, e.g. `dbo.Customerdata.*`.
 
 ### Section __TableSelect__
 
-Instead of exporting all data from each table, this section let's you define specific columns to export, ommiting unnecessary/unwanted data that way and potentially speed up the export.
+Instead of exporting all data from each table, this section let's you define specific columns to export, omitting unnecessary/unwanted data that way and potentially speed up the export.
 
 List any individual SELECT statement for a certain table in the format `<schema>.<tablename>|<SELECT columns part>`, e.g. `dbo.Customerdata|ID, LastName`.
 
-To define the default SELECT statement, use `*` _(asterix)_ as the table name, e.g. `*|*`. This is also the default, if not set otherwise here, resulting in a query like `"SELECT * FROM <table>"`.
+To define the default SELECT statement, use `*` _(asterisk)_ as the table name, e.g. `*|*`. This is also the default, if not set otherwise here, resulting in a query like `"SELECT * FROM <table>"`.
 
 Here's a sample XML:
 
@@ -111,7 +124,7 @@ Here's a sample XML:
             <CfgEntrys>
             <!-- 
             List any column which shouldn't be export in the format <schema>.<tablename>.<column>, e.g. dbo.Customerdata.ID
-            If a tbale should be skipped altogether, use '*' as the column name, e.g. dbo.Customerdata.*
+            If a table should be skipped altogether, use '*' as the column name, e.g. dbo.Customerdata.*
             -->
                <CfgEntry Key=">ColumnName" IsBinary="false" VarType="8">
                   <![CDATA[dbo.Rn_Interaction_Attachment.*]]>
@@ -149,7 +162,7 @@ Here's a sample XML:
 
 ## Installation
 
-None - simply extract the contens of file `MsSqlDataToText.rar` into a directory, edit the included sample configuration accordingly and start the application.
+None - simply extract the contents of file `MsSqlDataToText.rar` into a directory, edit the included sample configuration accordingly and start the application.
 
 ## Known limitations
 
