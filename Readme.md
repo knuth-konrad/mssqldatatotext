@@ -15,11 +15,11 @@ Export large datasets from MS SQL server to CSV files.
 
 ## Purpose / Origin
 
-A command line tool to export large MS SQL databases to text files _(*.csv)_. The need for this tool arose during the BUNAC project. Data stored in a MS SQL server database needed to be exported in a format usable by HPM _(a Linux shop)_.
+A command line tool to export large MS SQL databases to text files _(*.csv)_. The need for this tool arose - as it's always the case, during a project. Data stored in a MS SQL server database needed to be exported in a format usable by *a Linux shop*.
 
-Non of the out-of-the-box solutions I tried out, did work. E.g. Oracle's MySQL Workbench, MS SQL's Export assistant. Neither did various scripts / suggestions found online. The closest solution was a PowerShell script found on [StackOverflow](https://stackoverflow.com/questions/30791482/sql-server-management-studio-2012-export-all-tables-of-database-as-csv).
+Non of the out-of-the-box solutions I tried out did work, e.g. Oracle's MySQL Workbench, MS SQL's Export assistant. Neither did various scripts / suggestions found online. The closest solution was a PowerShell script found on [StackOverflow](https://stackoverflow.com/questions/30791482/sql-server-management-studio-2012-export-all-tables-of-database-as-csv).
 
-Due to a) the size of some of the tables and b) column data types such as `binary` and `image`, failed with a _System.OutOfMemoryException_. But the idea behind it was sound, so I replaced the failing one-liner data consumption `SqlDataAdapter.Fill(DataSet)` with a loop of `SqlDataReader.GetValue()`.
+Due to a) the size of some of the tables and b) column data types such as `binary` and `image`, it failed with a _System.OutOfMemoryException_. But the idea behind it was sound, so I replaced the failing one-liner data consumption `SqlDataAdapter.Fill(DataSet)` with a loop of `SqlDataReader.GetValue()`.
 
 I tried to make the resulting program as generic/configurable as I could (think of), without wasting too much time on it.
 
