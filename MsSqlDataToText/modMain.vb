@@ -4,9 +4,9 @@
 Imports System.Data
 Imports System.Data.SqlClient
 
-Imports libBAUtil.ConsoleUtil
-Imports libBAUtil.FilesystemUtil
-Imports libBAUtil.StringUtil
+Imports libBAUtil.ConsoleHelper
+Imports libBAUtil.FilesystemHelper
+Imports libBAUtil.StringHelper
 Imports libBAUtil.TextFileUtil
 Imports libBAUtil.DBTools.SQL.SqlDBUtil
 Imports libXmlConfig.Tools.Xml.Configuration
@@ -33,10 +33,10 @@ Module modMain
 
    Sub Main(ByVal cmdLineArgs() As String)
 
-      ' ToDo: XML config for "free form SQL" export, allowing JOINs etc.
+      ' ToDo: XML configuration for "free form SQL" export, allowing JOINs etc.
 
-      ConHeadline("MsSqlDataToText")
-      ConCopyright()
+      AppIntro("MsSqlDataToText")
+      AppCopyright()
       BlankLine()
 
       Console.WriteLine("Using configuration file: {0}", cmdLineArgs(0))
@@ -48,7 +48,7 @@ Module modMain
       ' Parse the configuration file
       Dim xmlConfig As New XmlConfig(cmdLineArgs(0))
 
-      Dim eRet As XmlConfig.eCfgXMLResult = xmlConfig.Init()
+      Dim eRet As XmlConfig.eCfgXMLResult = CType(xmlConfig.Init(), XmlConfig.eCfgXMLResult)
 
       Select Case eRet
 
@@ -59,7 +59,7 @@ Module modMain
             Console.WriteLine("No valid configuration found in {0}.", cmdLineArgs(0))
 
          Case libXmlConfig.Tools.Xml.Configuration.XmlConfig.eCfgXMLResult.xmlErrOtherUnknown
-            Console.WriteLine("Coundn't parse configuration XML {0}.", cmdLineArgs(0))
+            Console.WriteLine("Couldn't parse configuration XML {0}.", cmdLineArgs(0))
 
          Case libXmlConfig.Tools.Xml.Configuration.XmlConfig.eCfgXMLResult.xmlSuccess
 
@@ -91,7 +91,7 @@ Module modMain
       Dim dbCon As New SqlConnection(sConnectionstring)
       Dim dbCmd As New SqlCommand(sTableQuery, dbCon)
 
-      ' Load up the tables and schemas in a dataset
+      ' Load up the tables and schemta in a dataset
       Dim dbAdapter As New SqlDataAdapter(dbCmd)
       Dim dbDataset As New DataSet
 
@@ -128,7 +128,7 @@ Module modMain
 
       Next
 
-      ' Onyl save config, we changed it
+      ' Only save configuration, we changed it
       If bolAddTableNames = True Then
          xmlConfig.SaveConfig()
       End If
@@ -167,11 +167,11 @@ Module modMain
          End If
          Dim dbCmd As New SqlCommand(sQuery, dbCon)
 
-         ' Should not take longer than 2 mins.
+         ' Should not take longer than 2 minutes.
          dbCmd.CommandTimeout = 240
 
          ' *** Count the number of rows in that table
-         Dim dbReader As SqlDataReader
+         Dim dbReader As SqlDataReader = Nothing
          Try
 
             dbReader = dbCmd.ExecuteReader()
@@ -216,7 +216,7 @@ Module modMain
 
          End Try
 
-         ' Skip empty table alltogether?
+         ' Skip empty table altogether?
          If lRows = 0 Then
             If (xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.HasEntry("SkipEmptyTables") = True) AndAlso
                (CBool(xmlCfg.Sections.GetSection(CFG_EXPORT).Entrys.GetEntry("SkipEmptyTables").Value) = True) Then
@@ -422,7 +422,7 @@ Module modMain
       ' Section ExportColumns takes precedence over section SkipColumns, so check that first
       If xmlCfg.Sections.HasSection(CFG_EXPORTCOLUMNS) = True Then
 
-         ' If the table name is mentioned anywhere, it shoudln't be skipped completely
+         ' If the table name is mentioned anywhere, it shouldn't be skipped completely
          ' To prevent similar table names resulting in the irregular creation of empty CSV files, add
          ' the '.' to the comparison.
          ' Fixes issue https://dev.sta.net/Knuth.Konrad/mssqldatatotext/issues/3
@@ -498,7 +498,7 @@ Module modMain
          End If
       Next
 
-      ' Console.WriteLine("SELECT from config: {0}", sResult)
+      ' Console.WriteLine("SELECT from configuration: {0}", sResult)
 
       Return " " & sResult & " "
 
