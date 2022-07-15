@@ -7,8 +7,8 @@
 
 ** FIX **
 - Errornous creation of empty CSV files
-	When validating if a tbale should be exported, the existance of similar named table names would 
-	result in the errornous craetion of an empty CSV file.
+	When validating if a table should be exported, the existence of similar named table names would 
+	result in the errornous creation of an empty CSV file.
 
 ** CHANGE **
 - Display current export progress of current table's data.
@@ -18,7 +18,7 @@
 2020-03-09, v1.1.14.19119
 
 ** FIX **
-- Escape/replace one double quotes with two double quotes in textual data as per CSV specification.
+- Escape/replace one double quote with two double quotes in textual data as per CSV specification.
 	This time for real!
 
 
@@ -35,7 +35,7 @@
 2020-03-04, v1.0.0.30816
 
 ** FIX **
-- Escape/replace one double quotes with two double quotes in textual data as per CSV specification.
+- Escape/replace one double quote with two double quotes in textual data as per CSV specification.
 
 
 2020-03-04
