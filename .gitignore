@@ -267,7 +267,6 @@ MsSqlDataToText.xml
 # Test data
 MsSqlDataToText/DATA/*
 # Timetracker
-MsSqlDataToText.dt
-Devtracker.Dump
 MsSqlDataToText/RunIt.cmd
 MsSqlDataToText/TestIt.cmd
+libMsSqlDataToText/*
